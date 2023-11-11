@@ -1,0 +1,7 @@
+mbed-os/connectivity/cellular/*
+mbed-os/connectivity/nanostack/*
+mbed-os/connectivity/nfc/*
+mbed-os/storage/kvstore/*
+mbed-os/features/lorawan/*
+mbed-os/features/nfc/*
+mbed-os/features/cryptocell/*
