@@ -1,9 +1,10 @@
 #include <mbed.h>
 
 #include "COBS.h"
+#include "PackedSerial.h"
 #include "QEI_irq.h"
 
-#define debug
+// #define debug
 
 
 class data_array{
@@ -46,9 +47,9 @@ int main(){
     #ifndef debug
     BufferedSerial serial(CONSOLE_TX, CONSOLE_RX, 115200);
     #endif
-    encoder encoder1(PC_12, PC_13, 100e3);
-    encoder encoder2(PC_14, PC_15, 100e3);
-    encoder encoder3(PC_0, PC_1, 100e3);
+    Encoder encoder1(PC_4, PC_5, 30e3);
+    Encoder encoder2(PC_6, PC_7, 30e3);
+    Encoder encoder3(PC_8, PC_9, 30e3);
     CAN can(PA_11, PA_12, 1e6);
     CANMessage msg;
     while(1){
@@ -85,6 +86,6 @@ int main(){
         // }
         // printf("\n");
         #endif
-        wait_us(200e3);
+        wait_us(100e3);
     }
 }

@@ -1,14 +1,14 @@
 #pragma once
 #include <mbed.h>
 
-class encoder {
+class Encoder {
 public:
-    encoder(PinName pin_a, PinName pin_b, us_timestamp_t calc_period) : encoder_a(pin_a), encoder_b(pin_b), ticker(){
-        encoder_a.rise(callback(this, &encoder::rise_a));
-        encoder_b.rise(callback(this, &encoder::rise_a));
-        encoder_a.fall(callback(this, &encoder::fall_a));
-        encoder_b.fall(callback(this, &encoder::fall_a));
-        this->ticker.attach_us(callback(this, &encoder::calculate_speed), calc_period);
+    Encoder(PinName pin_a, PinName pin_b, us_timestamp_t calc_period) : encoder_a(pin_a), encoder_b(pin_b), ticker(){
+        encoder_a.rise(callback(this, &Encoder::rise_a));
+        encoder_b.rise(callback(this, &Encoder::rise_b));
+        encoder_a.fall(callback(this, &Encoder::fall_a));
+        encoder_b.fall(callback(this, &Encoder::fall_b));
+        this->ticker.attach_us(callback(this, &Encoder::calculate_speed), calc_period);
         count = 0;
         speed = 0;
         this->calc_period = calc_period;
