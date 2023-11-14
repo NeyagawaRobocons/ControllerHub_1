@@ -25,16 +25,16 @@ public:
     // @return: 1 if received data is valid, 0 if not, -1 if error
     int receive(struct data_type<HEADER_SIZE>& rx_data_type, std::array<uint8_t, RX_BUFFER_SIZE>& data);
 private:
-    // size_t index_from_header(){
-    //     for(size_t i = 0; i < RX_DATA_TYPE_NUM; i++){
-    //         if(header == rx_data_types[i].header){
-    //             return i;
-    //         }
-    //     }
-    //     return -1;
-    // }
+    ssize_t index_from_header(array<uint8_t, HEADER_SIZE> header){
+        for(size_t i = 0; i < RX_DATA_TYPE_NUM; i++){
+            if(header == rx_data_types[i].header){
+                return i;
+            }
+        }
+        return -1;
+    }
     BufferedSerial& serial;
-    std::array<data_type<RX_DATA_TYPE_NUM>, RX_DATA_TYPE_NUM> rx_data_types;
+    std::array<data_type<HEADER_SIZE>, RX_DATA_TYPE_NUM> rx_data_types;
     std::array<uint8_t, RX_BUFFER_SIZE> rx_buffer;
 };
 
