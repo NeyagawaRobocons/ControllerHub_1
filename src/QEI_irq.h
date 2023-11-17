@@ -3,7 +3,7 @@
 
 class Encoder {
 public:
-    Encoder(PinName pin_a, PinName pin_b, us_timestamp_t calc_period) : encoder_a(pin_a), encoder_b(pin_b), ticker(){
+    Encoder(PinName pin_a, PinName pin_b, us_timestamp_t calc_period, PinMode pinmode = PullNone) : encoder_a(pin_a, pinmode), encoder_b(pin_b, pinmode), ticker(){
         encoder_a.rise(callback(this, &Encoder::rise_a));
         encoder_b.rise(callback(this, &Encoder::rise_b));
         encoder_a.fall(callback(this, &Encoder::fall_a));

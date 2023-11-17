@@ -59,25 +59,6 @@ void PackedSerial<HEADER_SIZE, RX_DATA_TYPE_NUM, RX_BUFFER_SIZE>::send(std::arra
 
 template <size_t HEADER_SIZE, size_t RX_DATA_TYPE_NUM, size_t RX_BUFFER_SIZE>
 int PackedSerial<HEADER_SIZE, RX_DATA_TYPE_NUM, RX_BUFFER_SIZE>::receive(struct data_type<HEADER_SIZE>& rx_data_type, std::array<uint8_t, RX_BUFFER_SIZE>& data){
-    auto encoded_data = cobs_encode(rx_buffer);
-    if(serial.read(rx_buffer.data(), rx_buffer.size()) == 0){
-        return -1;
-    }
-    auto decoded_data = cobs_decode(rx_buffer);
-    if(decoded_data.size() < HEADER_SIZE){
-        return 0;
-    }
-    for(size_t i = 0; i < HEADER_SIZE; i++){
-        rx_data_type.header[i] = decoded_data[i];
-    }
-    for(size_t i = 0; i < RX_DATA_TYPE_NUM; i++){
-        if(rx_data_type.header == rx_data_types[i].header){
-            rx_data_type.data_size = decoded_data.size() - HEADER_SIZE;
-            for(size_t j = 0; j < rx_data_type.data_size; j++){
-                data[j] = decoded_data[j + HEADER_SIZE];
-            }
-            return 1;
-        }
-    }
+    // read serial to packet separator(0x00)
     return 0;
 }

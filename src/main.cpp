@@ -47,20 +47,20 @@ int main(){
     #ifndef debug
     BufferedSerial serial(CONSOLE_TX, CONSOLE_RX, 115200);
     #endif
-    Encoder encoder1(PC_4, PC_5, 30e3);
-    Encoder encoder2(PC_6, PC_7, 30e3);
-    Encoder encoder3(PC_8, PC_9, 30e3);
+    Encoder encoder1(PC_4, PC_5, 30e3, PullUp);
+    Encoder encoder2(PC_6, PC_7, 30e3, PullUp);
+    Encoder encoder3(PC_8, PC_9, 30e3, PullUp);
     CAN can(PA_11, PA_12, 1e6);
     CANMessage msg;
     while(1){
-        int16_t data[] = {8000, -8000, 8000, -8000};
-        msg.id = 0x01;
-        msg.len = 8;
-        for(int i = 0; i < 4; i++){
-            msg.data[2*i] = data[i] >> 8;
-            msg.data[2*i+1] = data[i] & 0xff;
-        }
-        can.write(msg);
+        // int16_t data[] = {8000, -8000, 8000, -8000};
+        // msg.id = 0x01;
+        // msg.len = 8;
+        // for(int i = 0; i < 4; i++){
+        //     msg.data[2*i] = data[i] >> 8;
+        //     msg.data[2*i+1] = data[i] & 0xff;
+        // }
+        // can.write(msg);
         led = !led;
 
         int32_t count[] = {encoder1, encoder2, encoder3};
@@ -86,6 +86,6 @@ int main(){
         // }
         // printf("\n");
         #endif
-        wait_us(100e3);
+        wait_us(10e3);
     }
 }
