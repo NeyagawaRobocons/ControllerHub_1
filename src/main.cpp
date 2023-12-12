@@ -19,22 +19,21 @@ class data_array{
                 this->speed[i] = speed[i];
             }
         }
-        std::array<uint8_t, 19> pack(){
-            std::array<uint8_t, 19> data;
-            data[0] = 0x01;
+        std::array<uint8_t, 18> pack(){
+            std::array<uint8_t, 18> data;
             for (size_t i = 0; i < 3; i++)
             {
                 //little endian
-                data[4*i+1] = count[i] & 0xff;
-                data[4*i+2] = (count[i] >> 8) & 0xff ;
-                data[4*i+3] = (count[i] >> 16) & 0xff;
-                data[4*i+4] = (count[i] >> 24) & 0xff;
+                data[4*i+0] = count[i] & 0xff;
+                data[4*i+1] = (count[i] >> 8) & 0xff ;
+                data[4*i+2] = (count[i] >> 16) & 0xff;
+                data[4*i+3] = (count[i] >> 24) & 0xff;
             }
             for (size_t i = 0; i < 3; i++)
             {
                 //little endian
-                data[2*i+13] = speed[i] & 0xff;
-                data[2*i+14] = (speed[i] >> 8) & 0xff;
+                data[2*i+12] = speed[i] & 0xff;
+                data[2*i+13] = (speed[i] >> 8) & 0xff;
             }
             return data;
         } 
