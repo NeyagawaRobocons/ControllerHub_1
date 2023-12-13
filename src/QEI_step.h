@@ -21,8 +21,11 @@ public:
     }
     //return speed in count per second with 4bit fraction and [pulse/sec]
     int16_t get_speed(){
-        float delta = (float)(timer.elapsed_time().count() - prev_t_us) * 1.0E-6f;
-        int16_t speed = (count - prev_count) * delta * 16 ; // 16 is 4bit fraction
+        int64_t t_us = timer.elapsed_time().count();
+        float delta = (float)(t_us - prev_t_us) * 1.0E-6f;
+        int16_t speed = (float)((count - prev_count) * 1) / delta ; // 16 is 4bit fraction
+        // int16_t speed = count - prev_count;
+        prev_t_us = t_us;
         prev_count = count;
         return speed;
     }

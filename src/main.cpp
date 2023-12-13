@@ -42,7 +42,7 @@ class data_array{
     private:
 };
 
-void write_motor(CAN can, unsigned int id, std::array<int16_t, 4> motors){
+void write_motor(CAN* can, unsigned int id, std::array<int16_t, 4> motors){
     CANMessage msg;
     msg.id = id;
     msg.len = 8;
@@ -50,7 +50,7 @@ void write_motor(CAN can, unsigned int id, std::array<int16_t, 4> motors){
         msg.data[2*i] = motors[i] >> 8;
         msg.data[2*i+1] = motors[i] & 0xff;
     }
-    can.write(msg);
+    can->write(msg);
 }
 
 static DigitalOut led(LED1);
@@ -67,20 +67,25 @@ int main(){
     Encoder encoder2(PC_6, PC_7, PullUp);
     Encoder encoder3(PC_8, PC_9, PullUp);
     CAN can(PA_11, PA_12, 1e6);
+    DigitalIn button(BUTTON1);
 
     std::array<PID, 3> motor_pid{PID{1,0,0},PID{1,0,0},PID{1,0,0}};
 
     Timer scheduler;
     scheduler.start();
-    int wait_time = 20e3;
+    int wait_time = 10e3;
+
+    Timer motor_write_scheduler;
+    motor_write_scheduler.start();
+    int motor_write_wait_time = 50e3;
     
     while(1){
         led = !led;
-        int32_t count[] = {encoder1, encoder2, encoder3};
-        int16_t speed[] = {encoder1.get_speed(), encoder2.get_speed(), encoder3.get_speed()};
-        data_array data2(count, speed);
 
         if(scheduler.elapsed_time().count() > wait_time){
+            int32_t count[] = {encoder1, encoder2, encoder3};
+            int16_t speed[] = {encoder1.get_speed(), encoder2.get_speed(), encoder3.get_speed()};
+            data_array data2(count, speed);
             auto encoded_data = cobs_encode(data2.pack());
             #ifndef debug
             ps.send({0x01}, data2.pack());
@@ -102,6 +107,28 @@ int main(){
             // printf("\n");
             #endif
             scheduler.reset();
+        }
+
+        if(motor_write_scheduler.elapsed_time().count() > motor_write_wait_time){
+            std::array<int16_t, 4> motors;
+            if (button == 0)
+            {
+                motors[0] = INT16_MAX * 0.95 * 0.5;
+                motors[1] = INT16_MAX * 0.95 * 0.5;
+                motors[2] = INT16_MAX * 0.95 * 0.5;
+                motors[3] = INT16_MAX * 0.95 * 0.5;
+                write_motor(&can, 0x01, motors);
+            }
+            else
+            {
+                motors[0] = 0;
+                motors[1] = 0;
+                motors[2] = 0;
+                motors[3] = 0;
+                write_motor(&can, 0x01, motors);
+            }
+            
+            motor_write_scheduler.reset();
         }
     }
 }
