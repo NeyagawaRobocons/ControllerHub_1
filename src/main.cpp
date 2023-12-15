@@ -1,17 +1,17 @@
 #include <mbed.h>
 
 #include "fifo.h"
-#include "COBS.h"
-#include "PackedSerial.h"
+#include "bfcobs.hpp"
 #include "QEI_step.h"
 #include "PID.h"
 
 // #define debug
 
 
-class data_array{
+class ododm_data_array{
     public:
-        data_array(int32_t count[3], int16_t speed[3]){
+        ododm_data_array(uint8_t header, int32_t count[3], int16_t speed[3]){
+            this->header = header;
             for(int i = 0; i < 3; i++){
                 this->count[i] = count[i];
             }
@@ -19,24 +19,26 @@ class data_array{
                 this->speed[i] = speed[i];
             }
         }
-        std::array<uint8_t, 18> pack(){
-            std::array<uint8_t, 18> data;
+        std::array<uint8_t, 19> pack(){
+            std::array<uint8_t, 19> data;
+            data[0] = header;
             for (size_t i = 0; i < 3; i++)
             {
                 //little endian
-                data[4*i+0] = count[i] & 0xff;
-                data[4*i+1] = (count[i] >> 8) & 0xff ;
-                data[4*i+2] = (count[i] >> 16) & 0xff;
-                data[4*i+3] = (count[i] >> 24) & 0xff;
+                data[4*i+1] = count[i] & 0xff;
+                data[4*i+2] = (count[i] >> 8) & 0xff ;
+                data[4*i+3] = (count[i] >> 16) & 0xff;
+                data[4*i+4] = (count[i] >> 24) & 0xff;
             }
             for (size_t i = 0; i < 3; i++)
             {
                 //little endian
-                data[2*i+12] = speed[i] & 0xff;
-                data[2*i+13] = (speed[i] >> 8) & 0xff;
+                data[2*i+13] = speed[i] & 0xff;
+                data[2*i+14] = (speed[i] >> 8) & 0xff;
             }
             return data;
         } 
+        uint8_t header;
         int32_t count[3];
         int16_t speed[3];
     private:
@@ -47,8 +49,8 @@ void write_motor(CAN* can, unsigned int id, std::array<int16_t, 4> motors){
     msg.id = id;
     msg.len = 8;
     for(int i = 0; i < 4; i++){
-        msg.data[2*i] = motors[i] >> 8;
-        msg.data[2*i+1] = motors[i] & 0xff;
+        msg.data[2*i] = (motors[i] >> 0) & 0xff;
+        msg.data[2*i+1] = (motors[i] >> 8) & 0xff;
     }
     can->write(msg);
 }
@@ -58,10 +60,7 @@ static DigitalOut led(LED1);
 int main(){
     #ifndef debug
     BufferedSerial serial(CONSOLE_TX, CONSOLE_RX, 115200);
-    struct data_type<1> target_format = {{0x01}, 12};
-    struct data_type<1> pid_gain_format = {{0x02}, 12};
-    std::array<struct data_type<1>, 2> rx_format = {target_format, pid_gain_format};
-    PackedSerial<1, 2, 256> ps(&serial, rx_format);
+    bfcobs<64> cobs;
     #endif
     Encoder encoder1(PC_4, PC_5, PullUp);
     Encoder encoder2(PC_6, PC_7, PullUp);
@@ -78,17 +77,50 @@ int main(){
     Timer motor_write_scheduler;
     motor_write_scheduler.start();
     int motor_write_wait_time = 50e3;
+
+    std::array<int16_t, 4> md1{0,0,0,0};
     
     while(1){
-        led = !led;
+        if (serial.readable())
+        {
+            uint8_t data[32];
+            ssize_t read_num = serial.read(data, 32);
+            #ifndef debug
+            for (size_t i = 0; i < read_num; i++)
+            {
+                cobs.push(data[i]);
+            }
+            if(cobs.ready() > 1){
+                size_t size;
+                uint8_t buffer[64];
+                int ret = cobs.read(buffer, &size);
+                if(ret > 0){
+                    // process messages
+                    if(size == 7){
+                        if (buffer[0] == 0x01)
+                        {
+                            md1[0] = (int16_t)((buffer[1] << 0) | (buffer[2] << 8));
+                            md1[1] = (int16_t)((buffer[3] << 0) | (buffer[4] << 8));
+                            md1[2] = (int16_t)((buffer[5] << 0) | (buffer[6] << 8));
+                        }
+                        
+                    }
+                }
+            led = !led;
+            }
+            #else
+            printf("%02x ", data);
+            #endif
+        }
+        
 
         if(scheduler.elapsed_time().count() > wait_time){
             int32_t count[] = {encoder1, encoder2, encoder3};
             int16_t speed[] = {encoder1.get_speed(), encoder2.get_speed(), encoder3.get_speed()};
-            data_array data2(count, speed);
-            auto encoded_data = cobs_encode(data2.pack());
+            ododm_data_array odom_data(0x01, count, speed);
+            auto encoded_data = cobs_encode(odom_data.pack());
             #ifndef debug
-            ps.send({0x01}, data2.pack());
+            serial.write(encoded_data.data(), encoded_data.size());
             #else
             printf("count: ");
             for(auto i : count){
@@ -121,11 +153,7 @@ int main(){
             }
             else
             {
-                motors[0] = 0;
-                motors[1] = 0;
-                motors[2] = 0;
-                motors[3] = 0;
-                write_motor(&can, 0x01, motors);
+                write_motor(&can, 0x01, md1);
             }
             
             motor_write_scheduler.reset();
