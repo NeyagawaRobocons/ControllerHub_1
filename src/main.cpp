@@ -10,7 +10,7 @@
 
 class ododm_data_array{
     public:
-        ododm_data_array(uint8_t header, int32_t count[3], int16_t speed[3]){
+        ododm_data_array(uint8_t header, float count[3], float speed[3]){
             this->header = header;
             for(int i = 0; i < 3; i++){
                 this->count[i] = count[i];
@@ -19,28 +19,22 @@ class ododm_data_array{
                 this->speed[i] = speed[i];
             }
         }
-        std::array<uint8_t, 19> pack(){
-            std::array<uint8_t, 19> data;
+        std::array<uint8_t, 25> pack(){
+            std::array<uint8_t, 25> data;
             data[0] = header;
             for (size_t i = 0; i < 3; i++)
             {
-                //little endian
-                data[4*i+1] = count[i] & 0xff;
-                data[4*i+2] = (count[i] >> 8) & 0xff ;
-                data[4*i+3] = (count[i] >> 16) & 0xff;
-                data[4*i+4] = (count[i] >> 24) & 0xff;
+                memcpy(&data[4*i+1], &count[i], 4);
             }
             for (size_t i = 0; i < 3; i++)
             {
-                //little endian
-                data[2*i+13] = speed[i] & 0xff;
-                data[2*i+14] = (speed[i] >> 8) & 0xff;
+                memcpy(&data[4*i+13], &speed[i], 4);
             }
             return data;
         } 
         uint8_t header;
-        int32_t count[3];
-        int16_t speed[3];
+        float count[3];
+        float speed[3];
     private:
 };
 
@@ -62,13 +56,11 @@ int main(){
     BufferedSerial serial(CONSOLE_TX, CONSOLE_RX, 115200);
     bfcobs<64> cobs;
     #endif
-    Encoder encoder1(PC_4, PC_5, PullUp);
-    Encoder encoder2(PC_6, PC_7, PullUp);
-    Encoder encoder3(PC_8, PC_9, PullUp);
+    Encoder encoder1(PC_4, PC_5, 400, PullUp);
+    Encoder encoder2(PC_6, PC_7, 400, PullUp);
+    Encoder encoder3(PC_8, PC_9, 400, PullUp);
     CAN can(PA_11, PA_12, 1e6);
     DigitalIn button(BUTTON1);
-
-    std::array<PID, 3> motor_pid{PID{1,0,0},PID{1,0,0},PID{1,0,0}};
 
     Timer scheduler;
     scheduler.start();
@@ -78,14 +70,16 @@ int main(){
     motor_write_scheduler.start();
     int motor_write_wait_time = 50e3;
 
-    std::array<int16_t, 4> md1{0,0,0,0};
+    float motor_gain = 160.15962547712672;
+    PID motor2_pid{0.1,0,0};
+    float motor2_speed = encoder3.get_speed();
+    float motor_target[3];
     
     while(1){
         if (serial.readable())
         {
             uint8_t data[32];
             ssize_t read_num = serial.read(data, 32);
-            #ifndef debug
             for (size_t i = 0; i < read_num; i++)
             {
                 cobs.push(data[i]);
@@ -96,27 +90,25 @@ int main(){
                 int ret = cobs.read(buffer, &size);
                 if(ret > 0){
                     // process messages
-                    if(size == 7){
+                    if(size == 13){
                         if (buffer[0] == 0x01)
                         {
-                            md1[0] = (int16_t)((buffer[1] << 0) | (buffer[2] << 8));
-                            md1[1] = (int16_t)((buffer[3] << 0) | (buffer[4] << 8));
-                            md1[2] = (int16_t)((buffer[5] << 0) | (buffer[6] << 8));
+                            for (size_t i = 0; i < 3; i++)
+                            {
+                                memcpy(&motor_target[i], &buffer[4*i+1], 4);
+                            }
                         }
-                        
                     }
                 }
             led = !led;
             }
-            #else
-            printf("%02x ", data);
-            #endif
         }
         
 
         if(scheduler.elapsed_time().count() > wait_time){
-            int32_t count[] = {encoder1, encoder2, encoder3};
-            int16_t speed[] = {encoder1.get_speed(), encoder2.get_speed(), encoder3.get_speed()};
+            float count[] = {encoder1, encoder2, encoder3};
+            float speed[] = {encoder1.get_speed(), encoder2.get_speed(), encoder3.get_speed()};
+            motor2_speed = speed[2];
             ododm_data_array odom_data(0x01, count, speed);
             auto encoded_data = cobs_encode(odom_data.pack());
             #ifndef debug
@@ -153,7 +145,12 @@ int main(){
             }
             else
             {
-                write_motor(&can, 0x01, md1);
+                motors[0] = motor_target[0] / motor_gain * 0.95 * INT16_MAX;
+                motors[1] = motor_target[1] / motor_gain * 0.95 * INT16_MAX;
+                motors[2] = motor_target[2] / motor_gain * 0.95 * INT16_MAX;
+                // motors[2] = (motor_target[2] / motor_gain + motor2_pid.process(motor2_speed, motor_target[2])) * 0.95 * INT16_MAX;
+                motors[3] = 0;
+                write_motor(&can, 0x01, motors);
             }
             
             motor_write_scheduler.reset();
