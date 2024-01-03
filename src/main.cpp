@@ -93,10 +93,21 @@ int main(){
                     if(size == 13){
                         if (buffer[0] == 0x01)
                         {
+                            //omni targets
                             for (size_t i = 0; i < 3; i++)
                             {
                                 memcpy(&motor_target[i], &buffer[4*i+1], 4);
                             }
+                        }
+                    }
+                    if(size == 6) {
+                        if(buffer[0] == 0x02){
+                            //daiza clamp
+                        }
+                    }
+                    if(size == 10) {
+                        if(buffer[0] == 0x03){
+                            //hina dustpan
                         }
                     }
                 }
