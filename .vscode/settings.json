@@ -58,5 +58,11 @@
         "mstd_atomic": "cpp",
         "mstd_iterator": "cpp"
     },
-    "ros.distro": "humble"
+    "ros.distro": "humble",
+    "cSpell.words": [
+        "backwarding",
+        "Daiza",
+        "Hina",
+        "lmtsw"
+    ]
 }

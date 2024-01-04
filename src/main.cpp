@@ -5,6 +5,8 @@
 #include "QEI_step.h"
 #include "PID.h"
 
+#include "mech.hpp"
+
 // #define debug
 
 
@@ -74,6 +76,12 @@ int main(){
     PID motor2_pid{0.1,0,0};
     float motor2_speed = encoder3.get_speed();
     float motor_target[3];
+
+    pid_param_t hina_rot_gain{0.2, 0, 0};
+    Mech mech(&can, 2, 5, 1000e3, 1000e3, 1000e3, 15000, -3000, hina_rot_gain, PullUp, -1,
+    PA_1, PA_2, PA_3, PA_4, PA_5, PA_6, PA_0, 3.0);
+    MechCmd cmd;
+    MechProcessRet prev_ret;
     
     while(1){
         if (serial.readable())
@@ -100,14 +108,28 @@ int main(){
                             }
                         }
                     }
-                    if(size == 6) {
+                    if(size == 2) {
                         if(buffer[0] == 0x02){
                             //daiza clamp
+                            for (size_t i = 0; i < 4; i++)
+                            {
+                                cmd.daiza_cmd.cylinder[i] = (buffer[1] >> i) & 0x01;
+                            }
+                            
                         }
                     }
-                    if(size == 10) {
+                    if(size == 6) {
                         if(buffer[0] == 0x03){
                             //hina dustpan
+                            for (size_t i = 0; i < 1; i++)
+                            {
+                                cmd.hina_cmd.motor_expand[i] = (buffer[1] >> i) & 0x01;
+                            }
+                            for (size_t i = 0; i < 1; i++)
+                            {
+                                memcpy(&cmd.hina_cmd.motor_positions[i], &buffer[4*i+2], 4);
+                            }
+                            
                         }
                     }
                 }
@@ -165,6 +187,34 @@ int main(){
             }
             
             motor_write_scheduler.reset();
+        }
+
+        MechProcessRet ret = mech.process(cmd);
+        if(ret != prev_ret){
+            std::array<uint8_t, 3> daiza_state;
+            daiza_state[0] = 0x02;
+            for (size_t i = 0; i < 1; i++)
+            {
+                daiza_state[1] |= ret.daiza_state.lmtsw[i] << i;
+            }
+            for (size_t i = 0; i < 4; i++)
+            {
+                daiza_state[2] |= ret.daiza_state.cylinder[i] << i;
+            }
+            auto encoded_data = cobs_encode(daiza_state);
+            serial.write(encoded_data.data(), encoded_data.size());
+            std::array<uint8_t, 5> hina_state;
+            hina_state[0] = 0x03;
+            for (size_t i = 0; i < 5; i++)
+            {
+                hina_state[1] |= ret.hina_state.lmtsw[i] << i;
+            }
+            for (size_t i = 0; i < 1; i++)
+            {
+                memcpy(&hina_state[2+4*i], &ret.hina_state.potentiometer[i], 4);
+            }
+            auto encoded_data2 = cobs_encode(hina_state);
+            serial.write(encoded_data2.data(), encoded_data2.size());
         }
     }
 }
