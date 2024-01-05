@@ -78,8 +78,8 @@ int main(){
     float motor_target[3];
 
     pid_param_t hina_rot_gain{0.2, 0, 0};
-    Mech mech(&can, 2, 5, 1000e3, 1000e3, 1000e3, 15000, -3000, hina_rot_gain, PullUp, -1,
-    PA_1, PA_2, PA_3, PA_4, PA_5, PA_6, PA_0, 3.0);
+    Mech mech(&can, 2, 20, 1000e3, 1000e3, 1000e3, 15000, -3000, hina_rot_gain, PullUp, -1,
+    PA_1, PA_7, PA_8, PA_4, PA_9, PA_6, PA_0, 3.0);
     MechCmd cmd;
     MechProcessRet prev_ret;
     
@@ -115,7 +115,6 @@ int main(){
                             {
                                 cmd.daiza_cmd.cylinder[i] = (buffer[1] >> i) & 0x01;
                             }
-                            
                         }
                     }
                     if(size == 6) {
@@ -133,7 +132,7 @@ int main(){
                         }
                     }
                 }
-            led = !led;
+            // led = !led;
             }
         }
         
@@ -190,9 +189,13 @@ int main(){
         }
 
         MechProcessRet ret = mech.process(cmd);
+        // led = cmd.daiza_cmd.cylinder[0] ;
+        led = ret.daiza_state.cylinder[0];
         if(ret != prev_ret){
             std::array<uint8_t, 3> daiza_state;
             daiza_state[0] = 0x02;
+            daiza_state[1] = 0;
+            daiza_state[2] = 0;
             for (size_t i = 0; i < 1; i++)
             {
                 daiza_state[1] |= ret.daiza_state.lmtsw[i] << i;
@@ -203,8 +206,9 @@ int main(){
             }
             auto encoded_data = cobs_encode(daiza_state);
             serial.write(encoded_data.data(), encoded_data.size());
-            std::array<uint8_t, 5> hina_state;
+            std::array<uint8_t, 6> hina_state;
             hina_state[0] = 0x03;
+            hina_state[1] = 0;
             for (size_t i = 0; i < 5; i++)
             {
                 hina_state[1] |= ret.hina_state.lmtsw[i] << i;
@@ -216,5 +220,7 @@ int main(){
             auto encoded_data2 = cobs_encode(hina_state);
             serial.write(encoded_data2.data(), encoded_data2.size());
         }
+
+        wait_us(1000);
     }
 }
