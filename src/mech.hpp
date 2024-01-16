@@ -73,7 +73,7 @@ public:
         PinName wall_1, PinName wall_2, PinName hina_rot_reset, PinName hina_rot_angle,
         float hina_rot_volt_to_rad_gain)
     : daiza(daiza_clamp_delay_us, daiza_asm_delay_us, daiza_up_delay_us, can, can_id_solenoid),
-        hina(hina_up_thrust, hina_down_thrust, hina_rot_gain, 100e3, can, can_id_md),
+        hina(hina_up_thrust, hina_down_thrust, hina_rot_gain, 100e3, 50e3, can, can_id_md),
         daiza_lmtsw(daiza, lmtsw_pinmode), hina_up_lmtsw(hina_up, lmtsw_pinmode), hina_down_lmtsw(hina_down, lmtsw_pinmode),
         wall_1_lmtsw(wall_1, lmtsw_pinmode), wall_2_lmtsw(wall_2, lmtsw_pinmode), hina_rot_reset_lmtsw(hina_rot_reset, lmtsw_pinmode),
         hina_rot_angle_meter(hina_rot_angle)

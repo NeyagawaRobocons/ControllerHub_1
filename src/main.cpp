@@ -81,7 +81,9 @@ int main(){
     Mech mech(&can, 2, 20, 1000e3, 1000e3, 1000e3, 15000, -3000, hina_rot_gain, PullUp, -1,
     PA_1, PA_7, PA_8, PA_4, PA_9, PA_6, PA_0, 3.0);
     MechCmd cmd;
-    MechProcessRet prev_ret;
+    Timer mech_state_serial_schduler;
+    mech_state_serial_schduler.start();
+    int mech_state_serial_wait_time = 100e3;
     
     while(1){
         if (serial.readable())
@@ -191,7 +193,7 @@ int main(){
         MechProcessRet ret = mech.process(cmd);
         // led = cmd.daiza_cmd.cylinder[0] ;
         led = ret.daiza_state.cylinder[0];
-        if(ret != prev_ret){
+        if(mech_state_serial_schduler.elapsed_time().count() > mech_state_serial_wait_time){
             std::array<uint8_t, 3> daiza_state;
             daiza_state[0] = 0x02;
             daiza_state[1] = 0;

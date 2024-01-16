@@ -8,15 +8,17 @@ private:
     MotorLmtsw motor1;
     MotorPosition motor2;
     uint32_t md_update_timeout_us;
+    uint32_t md_update_minimum_us;
     Timer md_update_timer;
     CAN* can;
     uint32_t can_id;
     int16_t prev_motor_value[2];
 public:
-    HinaDustpan(int16_t motor1_f_thrust, int16_t motor1_b_thrust, pid_param_t motor2_gain, uint32_t md_update_timeout_us, CAN* can, uint32_t can_id)
+    HinaDustpan(int16_t motor1_f_thrust, int16_t motor1_b_thrust, pid_param_t motor2_gain, uint32_t md_update_timeout_us, uint32_t md_update_minimum_us, CAN* can, uint32_t can_id)
     : motor1(motor1_f_thrust, motor1_b_thrust), motor2(motor2_gain)
     {
         this->md_update_timeout_us = md_update_timeout_us;
+        this->md_update_minimum_us = md_update_minimum_us;
         this->can = can;
         this->can_id = can_id;
         md_update_timer.start();
@@ -30,7 +32,7 @@ public:
         }
         motor_value[0] = motor1.process(motor1_f_lmtsw, motor1_b_lmtsw);
         motor_value[1] = motor2.process(motor2_feedback, motor2_cmd_target) * 0.95 * INT16_MAX ;
-        if(motor_value[0] != prev_motor_value[0] || motor_value[1] != prev_motor_value[1] || md_update_timer.elapsed_time().count() > md_update_timeout_us){
+        if(md_update_timer.elapsed_time().count() > md_update_minimum_us && (motor_value[0] != prev_motor_value[0] || motor_value[1] != prev_motor_value[1]) || md_update_timer.elapsed_time().count() > md_update_timeout_us){
             CANMessage msg;
             msg.id = can_id;
             msg.len = 8;
