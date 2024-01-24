@@ -32,7 +32,7 @@ public:
         }
         motor_value[0] = motor1.process(motor1_f_lmtsw, motor1_b_lmtsw);
         motor_value[1] = motor2.process(motor2_feedback, motor2_cmd_target) * 0.95 * INT16_MAX ;
-        if(md_update_timer.elapsed_time().count() > md_update_minimum_us && (motor_value[0] != prev_motor_value[0] || motor_value[1] != prev_motor_value[1]) || md_update_timer.elapsed_time().count() > md_update_timeout_us){
+        if(md_update_timer.elapsed_time().count() > md_update_minimum_us){
             CANMessage msg;
             msg.id = can_id;
             msg.len = 8;
