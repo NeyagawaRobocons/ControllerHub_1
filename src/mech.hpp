@@ -12,7 +12,7 @@ struct ActuatorCmd{
 
 struct MechCmd{
     ActuatorCmd<0,0,4> daiza_cmd;
-    ActuatorCmd<1,1,0> hina_cmd;
+    ActuatorCmd<3,1,0> hina_cmd;
 };
 
 template<size_t N_lmtsw, size_t N_cylinder, size_t N_potentiometer>
@@ -69,11 +69,12 @@ public:
     Mech(CAN* can, uint32_t can_id_md, uint32_t can_id_solenoid,
         uint32_t daiza_clamp_delay_us, uint32_t daiza_asm_delay_us, uint32_t daiza_up_delay_us,
         int16_t hina_up_thrust, int16_t hina_down_thrust, pid_param_t hina_rot_gain,
+        PinName pin_servo1, PinName pin_servo2,
         PinMode lmtsw_pinmode, bool pin_invert, PinName daiza, PinName hina_up, PinName hina_down,
         PinName wall_1, PinName wall_2, PinName hina_rot_reset, PinName hina_rot_angle,
         float hina_rot_volt_to_rad_gain)
     : daiza(daiza_clamp_delay_us, daiza_asm_delay_us, daiza_up_delay_us, can, can_id_solenoid),
-        hina(hina_up_thrust, hina_down_thrust, hina_rot_gain, 100e3, 50e3, can, can_id_md),
+        hina(hina_up_thrust, hina_down_thrust, hina_rot_gain, pin_servo1, pin_servo2, 100e3, 50e3, can, can_id_md),
         daiza_lmtsw(daiza, lmtsw_pinmode), hina_up_lmtsw(hina_up, lmtsw_pinmode), hina_down_lmtsw(hina_down, lmtsw_pinmode),
         wall_1_lmtsw(wall_1, lmtsw_pinmode), wall_2_lmtsw(wall_2, lmtsw_pinmode), hina_rot_reset_lmtsw(hina_rot_reset, lmtsw_pinmode),
         hina_rot_angle_meter(hina_rot_angle)
@@ -84,7 +85,8 @@ public:
     MechProcessRet process(MechCmd cmd){
         float dustpan_angle = hina_rot_angle_meter.read()*hina_rot_volt_to_rad_gain;
         daiza.process(cmd.daiza_cmd.cylinder[0], cmd.daiza_cmd.cylinder[2], cmd.daiza_cmd.cylinder[3]);
-        hina.process(cmd.hina_cmd.motor_expand[0], hina_up_lmtsw * pin_invert, hina_down_lmtsw * pin_invert, cmd.hina_cmd.motor_positions[0], dustpan_angle);
+        hina.process(cmd.hina_cmd.motor_expand[0], hina_up_lmtsw * pin_invert, hina_down_lmtsw * pin_invert,
+            cmd.hina_cmd.motor_positions[0], dustpan_angle, cmd.hina_cmd.motor_positions[1], cmd.hina_cmd.motor_positions[2]);
         MechProcessRet ret;
         ret.daiza_state.lmtsw[0] = pin_invert ? !daiza_lmtsw : daiza_lmtsw;
         ret.daiza_state.cylinder[0] = daiza.get_cylinder12_state() == CylinderState::FORWARDED ||daiza.get_cylinder12_state() == CylinderState::BACKWARDING;

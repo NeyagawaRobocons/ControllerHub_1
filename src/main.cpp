@@ -77,9 +77,10 @@ int main(){
     float motor2_speed = encoder3.get_speed();
     float motor_target[3];
 
-    pid_param_t hina_rot_gain{0.2, 0, 0};
-    Mech mech(&can, 2, 20, 1000e3, 1000e3, 1000e3, 15000, -3000, hina_rot_gain, PullUp, -1,
-    PA_1, PA_7, PA_8, PA_4, PA_9, PA_6, PA_0, 3.0);
+    pid_param_t hina_rot_gain{0.5, 0.05, 0};
+    Mech mech(&can, 2, 20, 1000e3, 1000e3, 1000e3, 15000, -3000, hina_rot_gain,
+    PA_1, PA_0, PullUp, true,
+    PC_0, PA_15, PB_7, PC_1, PC_2, PC_3, PB_0, 3.0);
     MechCmd cmd;
     Timer mech_state_serial_schduler;
     mech_state_serial_schduler.start();
@@ -120,14 +121,14 @@ int main(){
                             }
                         }
                     }
-                    if(size == 6) {
+                    if(size == 14) {
                         if(buffer[0] == 0x03){
                             //hina dustpan
                             for (size_t i = 0; i < 1; i++)
                             {
                                 cmd.hina_cmd.motor_expand[i] = (buffer[1] >> i) & 0x01;
                             }
-                            for (size_t i = 0; i < 1; i++)
+                            for (size_t i = 0; i < 3; i++)
                             {
                                 memcpy(&cmd.hina_cmd.motor_positions[i], &buffer[4*i+2], 4);
                             }
