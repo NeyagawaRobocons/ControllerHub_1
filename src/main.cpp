@@ -222,7 +222,5 @@ int main(){
             auto encoded_data2 = cobs_encode(hina_state);
             serial.write(encoded_data2.data(), encoded_data2.size());
         }
-
-        wait_us(1000);
     }
 }
