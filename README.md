@@ -29,4 +29,5 @@ This software is robot controll program that works with [nucleo_agent](https://g
 | PA_1 | servo motor 1 |
 | PA_0 | servo motor 2 |
 
+
 ![](doc/pin_assignment_left.png)
