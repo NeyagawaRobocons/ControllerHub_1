@@ -1,4 +1,7 @@
 # ControllerHub_1
+[![releases](https://img.shields.io/github/v/release/NeyagawaRobocons/ControllerHub_1?label=Release)](https://github.com/NeyagawaRobocons/ControllerHub_1/releases)
+[![build](https://github.com/NeyagawaRobocons/ControllerHub_1/actions/workflows/build.yml/badge.svg)](https://github.com/NeyagawaRobocons/ControllerHub_1/actions/workflows/build.yml)
+
 This software is robot controll program that works with [nucleo_agent](https://github.com/NeyagawaRobocons/nucleo_agent).
 - board : NUCLEO-F446RE
 
