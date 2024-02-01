@@ -95,7 +95,7 @@ int main(){
             {
                 cobs.push(data[i]);
             }
-            if(cobs.ready() > 3) led = 1; else led = 0;
+            // if(cobs.ready() > 3) led = 1; else led = 0;
             if(cobs.ready() > 1){
                 size_t size;
                 uint8_t buffer[64];
@@ -193,6 +193,7 @@ int main(){
         }
 
         MechProcessRet ret = mech.process(cmd);
+        led = ret.daiza_state.cylinder[0];
         if(mech_state_serial_schduler.elapsed_time().count() > mech_state_serial_wait_time){
             std::array<uint8_t, 3> daiza_state;
             daiza_state[0] = 0x02;
