@@ -65,6 +65,7 @@ private:
     DigitalIn hina_rot_reset_lmtsw;
     AnalogIn hina_rot_angle_meter;
     float hina_rot_volt_to_rad_gain;
+    float hina_rot_offset_rad;
 public:
     Mech(CAN* can, uint32_t can_id_md, uint32_t can_id_solenoid,
         uint32_t daiza_clamp_delay_us, uint32_t daiza_asm_delay_us, uint32_t daiza_up_delay_us,
@@ -72,7 +73,7 @@ public:
         PinName pin_servo1, PinName pin_servo2,
         PinMode lmtsw_pinmode, bool pin_invert, PinName daiza, PinName hina_up, PinName hina_down,
         PinName wall_1, PinName wall_2, PinName hina_rot_reset, PinName hina_rot_angle,
-        float hina_rot_volt_to_rad_gain)
+        float hina_rot_volt_to_rad_gain, float hina_rot_offset_rad)
     : daiza(daiza_clamp_delay_us, daiza_asm_delay_us, daiza_up_delay_us, can, can_id_solenoid),
         hina(hina_up_thrust, hina_down_thrust, hina_rot_gain, pin_servo1, pin_servo2, 100e3, 50e3, can, can_id_md),
         daiza_lmtsw(daiza, lmtsw_pinmode), hina_up_lmtsw(hina_up, lmtsw_pinmode), hina_down_lmtsw(hina_down, lmtsw_pinmode),
@@ -80,12 +81,13 @@ public:
         hina_rot_angle_meter(hina_rot_angle)
     {
         this->hina_rot_volt_to_rad_gain = hina_rot_volt_to_rad_gain;
+        this->hina_rot_offset_rad = hina_rot_offset_rad;
         this->pin_invert = pin_invert;
     }
     MechProcessRet process(MechCmd cmd){
-        float dustpan_angle = hina_rot_angle_meter.read()*hina_rot_volt_to_rad_gain;
+        float dustpan_angle = hina_rot_angle_meter.read()*hina_rot_volt_to_rad_gain + hina_rot_offset_rad;
         daiza.process(cmd.daiza_cmd.cylinder[0], cmd.daiza_cmd.cylinder[2], cmd.daiza_cmd.cylinder[3]);
-        hina.process(cmd.hina_cmd.motor_expand[0], hina_up_lmtsw * pin_invert, hina_down_lmtsw * pin_invert,
+        hina.process(cmd.hina_cmd.motor_expand[0], pin_invert ? !hina_up_lmtsw : hina_up_lmtsw, pin_invert ? !hina_down_lmtsw : hina_down_lmtsw,
             cmd.hina_cmd.motor_positions[0], dustpan_angle, cmd.hina_cmd.motor_positions[1], cmd.hina_cmd.motor_positions[2]);
         MechProcessRet ret;
         ret.daiza_state.lmtsw[0] = pin_invert ? !daiza_lmtsw : daiza_lmtsw;
