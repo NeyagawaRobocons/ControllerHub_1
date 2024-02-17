@@ -6,17 +6,13 @@ private:
     Cylinder cylinder12;
     Cylinder cylinder3;
     Cylinder cylinder4;
-    CAN* can;
-    uint32_t can_id;
-    uint8_t prev_state;
 public:
-    DaizaClamp(uint32_t cylinder12_delay_us, uint32_t cylinder3_delay_us, uint32_t cylinder4_delay_us, CAN* can, uint32_t can_id)
+    DaizaClamp(uint32_t cylinder12_delay_us, uint32_t cylinder3_delay_us, uint32_t cylinder4_delay_us)
     : cylinder12(cylinder12_delay_us, cylinder12_delay_us), cylinder3(cylinder3_delay_us, cylinder3_delay_us), cylinder4(cylinder4_delay_us, cylinder4_delay_us)
     {
-        this->can = can;
-        this->can_id = can_id;
     }
-    void process(bool cylinder12_cmd, bool cylinder3_cmd, bool cylinder4_cmd){
+    // return 6 solenoids state
+    uint8_t process(bool cylinder12_cmd, bool cylinder3_cmd, bool cylinder4_cmd){
         if(cylinder12_cmd){
             cylinder12.forward();
         }else{
@@ -54,14 +50,7 @@ public:
         if(cylinder4_valve.backward_valve){
             state |= 0b00100000;
         }
-        if(state != prev_state){
-            CANMessage msg;
-            msg.id = can_id;
-            msg.len = 1;
-            msg.data[0] = state;
-            can->write(msg);
-            prev_state = state;
-        }
+        return state;
     }
     CylinderState get_cylinder12_state(){
         return cylinder12.get_state();

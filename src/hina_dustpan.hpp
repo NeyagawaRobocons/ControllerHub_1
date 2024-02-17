@@ -13,6 +13,10 @@ private:
     uint32_t md_update_timeout_us;
     uint32_t md_update_minimum_us;
     Timer md_update_timer;
+    Timer sol_latch1_timer;
+    Timer sol_latch2_timer;
+    bool sol_latch1_triggered;
+    bool sol_latch2_triggered;
     CAN* can;
     uint32_t can_id;
     int16_t prev_motor_value[2];
@@ -25,8 +29,13 @@ public:
         this->can = can;
         this->can_id = can_id;
         md_update_timer.start();
+        sol_latch1_triggered = false;
+        sol_latch2_triggered = false;
+        sol_latch1_timer.start();
+        sol_latch2_timer.start();
     }
-    void process(bool motor1_cmd, bool motor1_f_lmtsw, bool motor1_b_lmtsw, float motor2_cmd_target, float motor2_feedback, float servo1_cmd, float servo2_cmd){
+    //return 2 solenoids state
+    uint8_t process(bool motor1_cmd, bool motor1_f_lmtsw, bool motor1_b_lmtsw, float motor2_cmd_target, float motor2_feedback, float servo1_cmd, float servo2_cmd, bool sol_latch1_trig, bool sol_latch2_trig){
         int16_t motor_value[2];
         if (motor1_cmd){
             motor1.forward();
@@ -53,5 +62,27 @@ public:
             }
             md_update_timer.reset();
         }
+        if(sol_latch1_trig && !sol_latch1_triggered){
+            sol_latch1_timer.reset();
+            sol_latch1_triggered = true;
+        }
+        if(sol_latch2_trig && !sol_latch2_triggered){
+            sol_latch2_timer.reset();
+            sol_latch2_triggered = true;
+        }
+        if(sol_latch1_timer.elapsed_time().count() > 500e3){
+            sol_latch1_triggered = false;
+        }
+        if(sol_latch2_timer.elapsed_time().count() > 500e3){
+            sol_latch2_triggered = false;
+        }
+        uint8_t sol_state = 0;
+        if(sol_latch1_triggered){
+            sol_state |= 0b00000001;
+        }
+        if(sol_latch2_triggered){
+            sol_state |= 0b00000010;
+        }
+        return sol_state;
     }
 };

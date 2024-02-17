@@ -61,6 +61,7 @@ int main(){
     Encoder encoder1(PC_4, PC_5, 400, PullUp);
     Encoder encoder2(PC_6, PC_7, 400, PullUp);
     Encoder encoder3(PC_8, PC_9, 400, PullUp);
+    Encoder encoder4(PC_10, PC_11, 400, PullUp);
     CAN can(PA_11, PA_12, 1e6);
     DigitalIn button(BUTTON1);
 
@@ -75,7 +76,7 @@ int main(){
     float motor_gain = 160.15962547712672;
     PID motor2_pid{0.1,0,0};
     float motor2_speed = encoder3.get_speed();
-    float motor_target[3];
+    float motor_target[4];
 
     pid_param_t hina_rot_gain{0.5, 0.05, 0};
     Mech mech(&can, 2, 20, 1000e3, 1000e3, 1000e3, 15000, -3000, hina_rot_gain,
@@ -95,18 +96,18 @@ int main(){
             {
                 cobs.push(data[i]);
             }
-            // if(cobs.ready() > 3) led = 1; else led = 0;
-            if(cobs.ready() > 1){
+            if(cobs.ready() > 3) led = 1; else led = 0;
+            while(cobs.ready() > 1){
                 size_t size;
                 uint8_t buffer[64];
                 int ret = cobs.read(buffer, &size);
                 if(ret > 0){
                     // process messages
-                    if(size == 13){
+                    if(size == 17){
                         if (buffer[0] == 0x01)
                         {
                             //omni targets
-                            for (size_t i = 0; i < 3; i++)
+                            for (size_t i = 0; i < 4; i++)
                             {
                                 memcpy(&motor_target[i], &buffer[4*i+1], 4);
                             }
@@ -119,18 +120,30 @@ int main(){
                             {
                                 cmd.daiza_cmd.cylinder[i] = (buffer[1] >> i) & 0x01;
                             }
+                            // std::array<uint8_t, 6> debug_data;
+                            // debug_data[0] = 0xff;
+                            // for (size_t i = 0; i < 4; i++)
+                            // {
+                            //     debug_data[i+1] = (buffer[1] >> i) & 0x01;
+                            // }
+                            // debug_data[5] = cobs.ready();
+                            // auto encoded_data = cobs_encode(debug_data);
+                            // serial.write(encoded_data.data(), encoded_data.size());
                         }
                     }
-                    if(size == 14) {
+                    if(size == 15) {
                         if(buffer[0] == 0x03){
                             //hina dustpan
                             for (size_t i = 0; i < 1; i++)
                             {
                                 cmd.hina_cmd.motor_expand[i] = (buffer[1] >> i) & 0x01;
+                            }for (size_t i = 0; i < 2; i++)
+                            {
+                                cmd.hina_cmd.cylinder[i] = (buffer[2] >> i) & 0x01;
                             }
                             for (size_t i = 0; i < 3; i++)
                             {
-                                memcpy(&cmd.hina_cmd.motor_positions[i], &buffer[4*i+2], 4);
+                                memcpy(&cmd.hina_cmd.motor_positions[i], &buffer[4*i+3], 4);
                             }
                             
                         }
@@ -171,29 +184,18 @@ int main(){
 
         if(motor_write_scheduler.elapsed_time().count() > motor_write_wait_time){
             std::array<int16_t, 4> motors;
-            if (button == 0)
-            {
-                motors[0] = INT16_MAX * 0.95 * 0.5;
-                motors[1] = INT16_MAX * 0.95 * 0.5;
-                motors[2] = INT16_MAX * 0.95 * 0.5;
-                motors[3] = INT16_MAX * 0.95 * 0.5;
-                write_motor(&can, 0x01, motors);
-            }
-            else
-            {
-                motors[0] = motor_target[0] / motor_gain * 0.95 * INT16_MAX;
-                motors[1] = motor_target[1] / motor_gain * 0.95 * INT16_MAX;
-                motors[2] = motor_target[2] / motor_gain * 0.95 * INT16_MAX;
-                // motors[2] = (motor_target[2] / motor_gain + motor2_pid.process(motor2_speed, motor_target[2])) * 0.95 * INT16_MAX;
-                motors[3] = 0;
-                write_motor(&can, 0x01, motors);
-            }
+            motors[0] = motor_target[0] / motor_gain * 0.95 * INT16_MAX;
+            motors[1] = motor_target[1] / motor_gain * 0.95 * INT16_MAX;
+            motors[2] = motor_target[2] / motor_gain * 0.95 * INT16_MAX;
+            // motors[2] = (motor_target[2] / motor_gain + motor2_pid.process(motor2_speed, motor_target[2])) * 0.95 * INT16_MAX;
+            motors[3] = motor_target[3] / motor_gain * 0.95 * INT16_MAX;
+            write_motor(&can, 0x01, motors);
             
             motor_write_scheduler.reset();
         }
 
         MechProcessRet ret = mech.process(cmd);
-        led = ret.daiza_state.cylinder[0];
+        // led = cmd.daiza_cmd.cylinder[0];
         if(mech_state_serial_schduler.elapsed_time().count() > mech_state_serial_wait_time){
             std::array<uint8_t, 3> daiza_state;
             daiza_state[0] = 0x02;
