@@ -103,50 +103,43 @@ int main(){
                 int ret = cobs.read(buffer, &size);
                 if(ret > 0){
                     // process messages
-                    if(size == 17){
-                        if (buffer[0] == 0x01)
+                    if(size == 17) if (buffer[0] == 0x01){
+                        //omni targets
+                        for (size_t i = 0; i < 4; i++)
                         {
-                            //omni targets
-                            for (size_t i = 0; i < 4; i++)
-                            {
-                                memcpy(&motor_target[i], &buffer[4*i+1], 4);
-                            }
+                            memcpy(&motor_target[i], &buffer[4*i+1], 4);
                         }
                     }
-                    if(size == 2) {
-                        if(buffer[0] == 0x02){
-                            //daiza clamp
-                            for (size_t i = 0; i < 4; i++)
-                            {
-                                cmd.daiza_cmd.cylinder[i] = (buffer[1] >> i) & 0x01;
-                            }
-                            // std::array<uint8_t, 6> debug_data;
-                            // debug_data[0] = 0xff;
-                            // for (size_t i = 0; i < 4; i++)
-                            // {
-                            //     debug_data[i+1] = (buffer[1] >> i) & 0x01;
-                            // }
-                            // debug_data[5] = cobs.ready();
-                            // auto encoded_data = cobs_encode(debug_data);
-                            // serial.write(encoded_data.data(), encoded_data.size());
+                    if(size == 2) if(buffer[0] == 0x02){
+                        //daiza clamp
+                        for (size_t i = 0; i < 4; i++)
+                        {
+                            cmd.daiza_cmd.cylinder[i] = (buffer[1] >> i) & 0x01;
                         }
+                        // std::array<uint8_t, 6> debug_data;
+                        // debug_data[0] = 0xff;
+                        // for (size_t i = 0; i < 4; i++)
+                        // {
+                        //     debug_data[i+1] = (buffer[1] >> i) & 0x01;
+                        // }
+                        // debug_data[5] = cobs.ready();
+                        // auto encoded_data = cobs_encode(debug_data);
+                        // serial.write(encoded_data.data(), encoded_data.size());
                     }
-                    if(size == 15) {
-                        if(buffer[0] == 0x03){
-                            //hina dustpan
-                            for (size_t i = 0; i < 1; i++)
-                            {
-                                cmd.hina_cmd.motor_expand[i] = (buffer[1] >> i) & 0x01;
-                            }for (size_t i = 0; i < 2; i++)
-                            {
-                                cmd.hina_cmd.cylinder[i] = (buffer[2] >> i) & 0x01;
-                            }
-                            for (size_t i = 0; i < 3; i++)
-                            {
-                                memcpy(&cmd.hina_cmd.motor_positions[i], &buffer[4*i+3], 4);
-                            }
-                            
+                    if(size == 15) if(buffer[0] == 0x03){
+                        //hina dustpan
+                        for (size_t i = 0; i < 1; i++)
+                        {
+                            cmd.hina_cmd.motor_expand[i] = (buffer[1] >> i) & 0x01;
+                        }for (size_t i = 0; i < 2; i++)
+                        {
+                            cmd.hina_cmd.cylinder[i] = (buffer[2] >> i) & 0x01;
                         }
+                        for (size_t i = 0; i < 3; i++)
+                        {
+                            memcpy(&cmd.hina_cmd.motor_positions[i], &buffer[4*i+3], 4);
+                        }
+                        
                     }
                 }
             // led = !led;
