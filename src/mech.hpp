@@ -26,6 +26,7 @@ class MechProcessRet{
 public:
     SensorState<1,4,0> daiza_state;
     SensorState<5,0,1> hina_state;
+    int16_t debug_data[2];
     bool operator == (const MechProcessRet& other){
         bool ret = true;
         for (size_t i = 0; i < 1; i++)
@@ -95,7 +96,7 @@ public:
         float hina_rot_volt_to_rad_gain,
         float hina_rot_offset_rad)
     : daiza(daiza_clamp_delay_us, daiza_asm_delay_us, daiza_up_delay_us),
-        hina(hina_up_thrust, hina_down_thrust, hina_rot_gain, pin_servo1, pin_servo2, 100e3, 50e3, can, can_id_md),
+        hina(hina_up_thrust, hina_down_thrust, hina_rot_gain, -0.27, pin_servo1, pin_servo2, 100e3, 50e3, can, can_id_md),
         daiza_lmtsw(daiza, lmtsw_pinmode),
         hina_up_lmtsw(hina_up, lmtsw_pinmode),
         hina_down_lmtsw(hina_down, lmtsw_pinmode),
@@ -116,8 +117,9 @@ public:
         float dustpan_angle = hina_rot_angle_meter.read()*hina_rot_volt_to_rad_gain + hina_rot_offset_rad;
         uint8_t solenoid_state = 0;
         solenoid_state |= daiza.process(cmd.daiza_cmd.cylinder[0], cmd.daiza_cmd.cylinder[2], cmd.daiza_cmd.cylinder[3]);
-        solenoid_state |= hina.process(cmd.hina_cmd.motor_expand[0], pin_invert ? !hina_up_lmtsw : hina_up_lmtsw, pin_invert ? !hina_down_lmtsw : hina_down_lmtsw,
-            cmd.hina_cmd.motor_positions[0], dustpan_angle, cmd.hina_cmd.motor_positions[1], cmd.hina_cmd.motor_positions[2], cmd.hina_cmd.cylinder[0], cmd.hina_cmd.cylinder[1]) << 6;
+        auto hina_ret = hina.process(cmd.hina_cmd.motor_expand[0], pin_invert ? !hina_up_lmtsw : hina_up_lmtsw, pin_invert ? !hina_down_lmtsw : hina_down_lmtsw,
+            cmd.hina_cmd.motor_positions[0], dustpan_angle, cmd.hina_cmd.motor_positions[1], cmd.hina_cmd.motor_positions[2], cmd.hina_cmd.cylinder[0], cmd.hina_cmd.cylinder[1]);
+        solenoid_state |= hina_ret.solenoids << 6;
         if(solenoid_state != prev_solenoid_state){
             CANMessage msg;
             msg.id = can_id_solenoid;
@@ -138,6 +140,8 @@ public:
         ret.hina_state.lmtsw[3] = pin_invert ? !wall_2_lmtsw : wall_2_lmtsw;
         ret.hina_state.lmtsw[4] = pin_invert ? !hina_rot_reset_lmtsw : hina_rot_reset_lmtsw;
         ret.hina_state.potentiometer[0] = dustpan_angle;
+        ret.debug_data[0] = hina_ret.motors[0];
+        ret.debug_data[1] = hina_ret.motors[1];
         return ret;
     }
 };

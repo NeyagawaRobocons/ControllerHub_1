@@ -6,7 +6,7 @@ class MotorPosition
 private:
     PID pid;
 public:
-    MotorPosition(pid_param_t gain): pid(gain,0,0){
+    MotorPosition(pid_param_t gain): pid(gain){
     }
     float process(float feedback, float target){
         return pid.process(feedback, target);

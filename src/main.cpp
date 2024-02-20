@@ -58,6 +58,12 @@ int main(){
     BufferedSerial serial(CONSOLE_TX, CONSOLE_RX, 115200);
     bfcobs<64> cobs;
     #endif
+    // Encoder encoder[4] = {
+    //     Encoder(PC_4, PC_5, 400),
+    //     Encoder{PC_6, PC_7, 400},
+    //     Encoder{PC_8, PC_9, 400},
+    //     Encoder{PC_10, PC_11, 400},
+    // };
     Encoder encoder1(PC_4, PC_5, 400, PullUp);
     Encoder encoder2(PC_6, PC_7, 400, PullUp);
     Encoder encoder3(PC_8, PC_9, 400, PullUp);
@@ -73,16 +79,27 @@ int main(){
     motor_write_scheduler.start();
     int motor_write_wait_time = 50e3;
 
-    float motor_gain = 160.15962547712672;
+    float motor_gain = 160.15962547712672 * 2;
     PID motor2_pid{0.1,0,0};
-    float motor2_speed = encoder3.get_speed();
+    PID motor_pid[4] = {
+        PID{0.1, 0, 0},
+        PID{0.1, 0, 0},
+        PID{0.1, 0, 0},
+        PID{0.1, 0, 0}
+    };
+    float motor_speeds[4];
+    motor_speeds[0] = -encoder1.get_speed();
+    motor_speeds[1] = -encoder2.get_speed();
+    motor_speeds[2] = -encoder3.get_speed();
+    motor_speeds[3] = -encoder4.get_speed();
     float motor_target[4];
 
-    pid_param_t hina_rot_gain{0.5, 0.5, 0};
-    Mech mech(&can, 2, 20, 1000e3, 1000e3, 1000e3, 15000, -3000, hina_rot_gain,
+    pid_param_t hina_rot_gain{0.3, 0.05, 0};
+    Mech mech(&can, 2, 20, 1000e3, 1000e3, 1000e3, 15000, -6000, hina_rot_gain,
     PA_1, PA_0, PullUp, true,
     PC_0, PA_15, PB_7, PC_1, PC_2, PC_3, PB_0, -4.4879895051283, 2.2439947525641);
     MechCmd cmd;
+    cmd.hina_cmd.motor_positions[0] = - 3.14159265358979323846f / 2.0f;
     Timer mech_state_serial_schduler;
     mech_state_serial_schduler.start();
     int mech_state_serial_wait_time = 100e3;
@@ -148,9 +165,12 @@ int main(){
         
 
         if(scheduler.elapsed_time().count() > wait_time){
+            motor_speeds[0] = -encoder1.get_speed();
+            motor_speeds[1] = -encoder2.get_speed();
+            motor_speeds[2] = -encoder3.get_speed();
+            motor_speeds[3] = -encoder4.get_speed();
             float count[] = {encoder1, encoder2, encoder3};
-            float speed[] = {encoder1.get_speed(), encoder2.get_speed(), encoder3.get_speed()};
-            motor2_speed = speed[2];
+            float speed[] = {motor_speeds[0], motor_speeds[1], motor_speeds[2]};
             ododm_data_array odom_data(0x01, count, speed);
             auto encoded_data = cobs_encode(odom_data.pack());
             #ifndef debug
@@ -177,11 +197,14 @@ int main(){
 
         if(motor_write_scheduler.elapsed_time().count() > motor_write_wait_time){
             std::array<int16_t, 4> motors;
-            motors[0] = motor_target[0] / motor_gain * 0.95 * INT16_MAX;
-            motors[1] = motor_target[1] / motor_gain * 0.95 * INT16_MAX;
-            motors[2] = motor_target[2] / motor_gain * 0.95 * INT16_MAX;
+            // motors[0] = motor_target[0] / motor_gain * 0.95 * INT16_MAX;
+            // motors[1] = motor_target[1] / motor_gain * 0.95 * INT16_MAX;
+            // motors[2] = motor_target[2] / motor_gain * 0.95 * INT16_MAX;
+            // motors[3] = motor_target[3] / motor_gain * 0.95 * INT16_MAX;
+            for(size_t i = 0; i < 4; i++){
+                motors[i] = (motor_target[i] / motor_gain + motor_pid[i].process(motor_speeds[i], motor_target[i])) * 0.95 * INT16_MAX;
+            }
             // motors[2] = (motor_target[2] / motor_gain + motor2_pid.process(motor2_speed, motor_target[2])) * 0.95 * INT16_MAX;
-            motors[3] = motor_target[3] / motor_gain * 0.95 * INT16_MAX;
             write_motor(&can, 0x01, motors);
             
             motor_write_scheduler.reset();
@@ -217,6 +240,12 @@ int main(){
             }
             auto encoded_data2 = cobs_encode(hina_state);
             serial.write(encoded_data2.data(), encoded_data2.size());
+            std::array<uint8_t, 5> debug_data;
+            debug_data[0] = 0xff;
+            memcpy(&debug_data[1], &ret.debug_data[0], 2);
+            memcpy(&debug_data[3], &ret.debug_data[1], 2);
+            auto encoded_debug_data = cobs_encode(debug_data);
+            serial.write(encoded_debug_data.data(), encoded_debug_data.size());
         }
     }
 }

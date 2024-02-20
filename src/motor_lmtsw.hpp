@@ -25,7 +25,7 @@ public:
                 is_backwarding = false;
                 return 0;
             }else{
-                return 0;
+                return backward_thrust;
             }
         }
         return 0;

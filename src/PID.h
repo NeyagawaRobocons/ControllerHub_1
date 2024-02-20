@@ -21,7 +21,7 @@ private:
     float integral_max;
 public:
     PID(float k_i, float k_p, float k_d, float integral_max, float first_feedback, float first_target);
-    PID(pid_param_t gain, float first_feedback, float first_target);
+    PID(pid_param_t gain, float integral_max, float first_feedback, float first_target);
     ~PID();
     float process(float feedback, float target);
     void reset();
@@ -40,9 +40,10 @@ PID::PID(float k_i, float k_p, float k_d, float integral_max = 1, float first_fe
     this->error_prev = first_target - first_feedback;
 }
 
-PID::PID(pid_param_t gain, float first_feedback, float first_target) : timer()
+PID::PID(pid_param_t gain, float integral_max = 1, float first_feedback = 0, float first_target = 0) : timer()
 {
     this->gain = gain;
+    this->integral_max = integral_max;
     this->timer.start();
     this->t_prev_us = timer.elapsed_time().count();
     this->error_prev = first_target - first_feedback;
