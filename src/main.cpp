@@ -227,16 +227,20 @@ int main(){
             }
             auto encoded_data = cobs_encode(daiza_state);
             serial.write(encoded_data.data(), encoded_data.size());
-            std::array<uint8_t, 6> hina_state;
+            std::array<uint8_t, 7> hina_state;
             hina_state[0] = 0x03;
             hina_state[1] = 0;
             for (size_t i = 0; i < 5; i++)
             {
                 hina_state[1] |= ret.hina_state.lmtsw[i] << i;
             }
+            for (size_t i = 0; i < 2; i++)
+            {
+                hina_state[2] |= ret.hina_state.cylinder[i] << i;
+            }
             for (size_t i = 0; i < 1; i++)
             {
-                memcpy(&hina_state[2+4*i], &ret.hina_state.potentiometer[i], 4);
+                memcpy(&hina_state[3+4*i], &ret.hina_state.potentiometer[i], 4);
             }
             auto encoded_data2 = cobs_encode(hina_state);
             serial.write(encoded_data2.data(), encoded_data2.size());

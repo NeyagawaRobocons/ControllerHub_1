@@ -25,7 +25,7 @@ struct SensorState{
 class MechProcessRet{
 public:
     SensorState<1,4,0> daiza_state;
-    SensorState<5,0,1> hina_state;
+    SensorState<5,2,1> hina_state;
     int16_t debug_data[2];
     bool operator == (const MechProcessRet& other){
         bool ret = true;
@@ -139,6 +139,8 @@ public:
         ret.hina_state.lmtsw[2] = pin_invert ? !wall_1_lmtsw : wall_1_lmtsw;
         ret.hina_state.lmtsw[3] = pin_invert ? !wall_2_lmtsw : wall_2_lmtsw;
         ret.hina_state.lmtsw[4] = pin_invert ? !hina_rot_reset_lmtsw : hina_rot_reset_lmtsw;
+        ret.hina_state.cylinder[0] = cmd.hina_cmd.cylinder[0];
+        ret.hina_state.cylinder[1] = cmd.hina_cmd.cylinder[1];
         ret.hina_state.potentiometer[0] = dustpan_angle;
         ret.debug_data[0] = hina_ret.motors[0];
         ret.debug_data[1] = hina_ret.motors[1];
