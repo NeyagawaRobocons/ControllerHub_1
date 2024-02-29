@@ -97,7 +97,7 @@ int main(){
     pid_param_t hina_rot_gain{0.3, 0.05, 0};
     Mech mech(&can, 2, 20, 1000e3, 1000e3, 1000e3, 15000, -6000, hina_rot_gain,
     PA_1, PA_0, PullUp, true,
-    PC_0, PA_15, PB_7, PC_1, PC_2, PC_3, PB_0, -4.4879895051283, 2.2439947525641);
+    PC_0, PA_15, PB_7, PC_1, PC_2, PC_3, PB_0, -3.5903916041026, 1.7951958020513);
     MechCmd cmd;
     cmd.hina_cmd.motor_positions[0] = - 3.14159265358979323846f / 2.0f;
     Timer mech_state_serial_schduler;
