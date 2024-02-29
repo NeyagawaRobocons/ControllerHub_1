@@ -96,7 +96,7 @@ public:
         float hina_rot_volt_to_rad_gain,
         float hina_rot_offset_rad)
     : daiza(daiza_clamp_delay_us, daiza_asm_delay_us, daiza_up_delay_us),
-        hina(hina_up_thrust, hina_down_thrust, hina_rot_gain, -0.27, pin_servo1, pin_servo2, 100e3, 50e3, can, can_id_md),
+        hina(hina_up_thrust, hina_down_thrust, hina_rot_gain, -0.1, pin_servo1, pin_servo2, 100e3, 50e3, can, can_id_md),
         daiza_lmtsw(daiza, lmtsw_pinmode),
         hina_up_lmtsw(hina_up, lmtsw_pinmode),
         hina_down_lmtsw(hina_down, lmtsw_pinmode),
