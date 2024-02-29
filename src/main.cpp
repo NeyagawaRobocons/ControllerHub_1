@@ -1,7 +1,7 @@
 #include <mbed.h>
 
 #include "fifo.h"
-#include "bfcobs.hpp"
+#include "bfcobs2.hpp"
 #include "QEI_step.h"
 #include "PID.h"
 
@@ -56,7 +56,7 @@ static DigitalOut led(LED1);
 int main(){
     #ifndef debug
     BufferedSerial serial(CONSOLE_TX, CONSOLE_RX, 115200);
-    bfcobs<64> cobs;
+    bfcobs<128> cobs;
     #endif
     // Encoder encoder[4] = {
     //     Encoder(PC_4, PC_5, 400),
