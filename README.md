@@ -35,3 +35,4 @@ This software is robot controll program that works with [nucleo_agent](https://g
 
 
 ![](doc/pin_assignment_left.png)
+![](doc/無題7_20240301095619.png)
