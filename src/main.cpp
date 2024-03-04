@@ -113,6 +113,9 @@ int main(){
     bool prev_bonbori_state = false;
     MX_TIM3_Init();
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 15);
+    wait_us(1.2e3);
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
     
     while(1){
         if (serial.readable())
