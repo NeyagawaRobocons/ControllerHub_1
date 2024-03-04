@@ -1,4 +1,6 @@
+#include <main.h>
 #include <mbed.h>
+#include "stm32f4xx_hal.h"
 
 #include "fifo.h"
 #include "bfcobs2.hpp"
@@ -8,6 +10,10 @@
 #include "mech.hpp"
 
 // #define debug
+TIM_HandleTypeDef htim3;
+DMA_HandleTypeDef hdma_tim3_ch1_trig;
+
+static void MX_TIM3_Init(void);
 
 
 class ododm_data_array{
@@ -103,6 +109,10 @@ int main(){
     Timer mech_state_serial_schduler;
     mech_state_serial_schduler.start();
     int mech_state_serial_wait_time = 100e3;
+
+    bool prev_bonbori_state = false;
+    MX_TIM3_Init();
+    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
     
     while(1){
         if (serial.readable())
@@ -157,6 +167,21 @@ int main(){
                             memcpy(&cmd.hina_cmd.motor_positions[i], &buffer[4*i+3], 4);
                         }
                         
+                    }
+                    if(size == 2) if(buffer[0] == 0x04){
+                        // bonbori
+                        if(buffer[1] && !prev_bonbori_state){
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 29);
+                            wait_us(1.2e3);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+                        }else if(!buffer[1] && prev_bonbori_state){
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 15);
+                            wait_us(1.2e3);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+                        }else{
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+                        }
+                        prev_bonbori_state = buffer[1];
                     }
                 }
             // led = !led;
@@ -253,3 +278,46 @@ int main(){
         }
     }
 }
+
+static void MX_TIM3_Init(void)
+{
+
+    TIM_MasterConfigTypeDef sMasterConfig = {0};
+    TIM_OC_InitTypeDef sConfigOC = {0};
+
+    htim3.Instance = TIM3;
+    htim3.Init.Prescaler = 0;
+    htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+    htim3.Init.Period = 57;
+    htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    sConfigOC.OCMode = TIM_OCMODE_PWM1;
+    sConfigOC.Pulse = 0;
+    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+    if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+    {
+        Error_Handler();
+    }
+    HAL_TIM_MspPostInit(&htim3);
+
+}
+
+void Error_Handler(void)
+{
+    __disable_irq();
+    while (1)
+    {
+    }
+}
+
