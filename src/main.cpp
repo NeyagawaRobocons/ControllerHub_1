@@ -101,7 +101,7 @@ int main(){
     float motor_target[4];
 
     pid_param_t hina_rot_gain{0.3, 0.05, 0};
-    Mech mech(&can, 2, 20, 1000e3, 1000e3, 1000e3, 15000, -6000, hina_rot_gain,
+    Mech mech(&can, 2, 20, 1000e3, 1000e3, 1000e3, 15000, -12000, hina_rot_gain,
     PA_1, PA_0, PullUp, true,
     PC_0, PA_15, PB_7, PC_1, PC_2, PC_3, PB_0, -3.5903916041026, 1.7951958020513);
     MechCmd cmd;
