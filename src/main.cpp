@@ -86,12 +86,11 @@ int main(){
     int motor_write_wait_time = 50e3;
 
     float motor_gain = 160.15962547712672 * 2;
-    PID motor2_pid{0.1,0,0};
     PID motor_pid[4] = {
-        PID(0.1, 0.0, 0, 0.5),
-        PID(0.1, 0.0, 0, 0.5),
-        PID(0.1, 0.0, 0, 0.5),
-        PID(0.1, 0.0, 0, 0.5),
+        PID(0.0, 0.1, 0, 0.5),
+        PID(0.0, 0.1, 0, 0.5),
+        PID(0.0, 0.1, 0, 0.5),
+        PID(0.0, 0.1, 0, 0.5),
     };
     float motor_speeds[4];
     motor_speeds[0] = -encoder1.get_speed();
@@ -105,6 +104,9 @@ int main(){
     PA_1, PA_0, PullUp, true,
     PC_0, PA_15, PB_7, PC_1, PC_2, PC_3, PB_0, -3.5903916041026, 1.7951958020513);
     MechCmd cmd;
+    cmd.daiza_cmd.cylinder[0] = 1;
+    cmd.daiza_cmd.cylinder[1] = 1;
+    cmd.daiza_cmd.cylinder[2] = 1;
     cmd.hina_cmd.motor_positions[0] = - 3.14159265358979323846f / 2.0f;
     Timer mech_state_serial_schduler;
     mech_state_serial_schduler.start();
@@ -232,7 +234,6 @@ int main(){
             for(size_t i = 0; i < 4; i++){
                 motors[i] = (motor_target[i] / motor_gain + motor_pid[i].process(motor_speeds[i], motor_target[i])) * 0.95 * INT16_MAX;
             }
-            // motors[2] = (motor_target[2] / motor_gain + motor2_pid.process(motor2_speed, motor_target[2])) * 0.95 * INT16_MAX;
             write_motor(&can, 0x01, motors);
             
             motor_write_scheduler.reset();
