@@ -87,10 +87,10 @@ int main(){
 
     float motor_gain = 160.15962547712672 * 2;
     PID motor_pid[4] = {
-        PID(0.0, 0.1, 0, 0.5),
-        PID(0.0, 0.1, 0, 0.5),
-        PID(0.0, 0.1, 0, 0.5),
-        PID(0.0, 0.1, 0, 0.5),
+        PID(0.1, 0.0, 0, 0.5),
+        PID(0.1, 0.0, 0, 0.5),
+        PID(0.1, 0.0, 0, 0.5),
+        PID(0.1, 0.0, 0, 0.5),
     };
     float motor_speeds[4];
     motor_speeds[0] = -encoder1.get_speed();
