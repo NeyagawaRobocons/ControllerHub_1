@@ -107,7 +107,7 @@ int main(){
     cmd.daiza_cmd.cylinder[0] = 1;
     cmd.daiza_cmd.cylinder[1] = 1;
     cmd.daiza_cmd.cylinder[2] = 1;
-    cmd.hina_cmd.motor_positions[0] = - 3.14159265358979323846f / 2.0f;
+    cmd.hina_cmd.motor_positions[0] = - 1.5707963267949 - 0.13089969389957;
     Timer mech_state_serial_schduler;
     mech_state_serial_schduler.start();
     int mech_state_serial_wait_time = 100e3;
